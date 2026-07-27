@@ -1,0 +1,7 @@
+{
+  "name": "gymtracker-run-and-test-driver",
+  "private": true,
+  "dependencies": {
+    "playwright": "1.55.0"
+  }
+}

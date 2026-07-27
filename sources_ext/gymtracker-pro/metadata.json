@@ -1,0 +1,6 @@
+{
+  "name": "GymTracker Pro",
+  "description": "Sistema de gestión de clientes de entrenamiento personalizado con métricas InBody, evaluaciones automáticas de 21 días, rutinas y gráficos en tiempo real.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
