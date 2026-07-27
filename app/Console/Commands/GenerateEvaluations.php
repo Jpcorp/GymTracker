@@ -21,13 +21,13 @@ class GenerateEvaluations extends Command
         $generated = 0;
 
         Client::where('status', 'active')->each(function (Client $client) use ($today, &$generated) {
+            if ($client->daysUntilNextEvaluation() > 0) {
+                return;
+            }
+
             $last = $client->evaluations()->orderByDesc('evaluation_number')->first();
 
             $anchor = $last?->period_end ?? $client->start_date;
-
-            if ($anchor->diffInDays($today) < 21) {
-                return;
-            }
 
             $periodStart = $last ? $anchor->copy()->addDay() : $anchor->copy();
             $periodEnd = $periodStart->copy()->addDays(20);

@@ -5,6 +5,7 @@ use App\Http\Controllers\ClientReportController;
 use App\Livewire\Client\ClientForm;
 use App\Livewire\Client\ClientList;
 use App\Livewire\Client\ClientShow;
+use App\Livewire\Dashboard;
 use App\Livewire\Routine\RoutineForm;
 use App\Livewire\Routine\RoutineList;
 use App\Livewire\Routine\RoutineShow;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome');
 
-Route::view('dashboard', 'dashboard')
+Route::get('dashboard', Dashboard::class)
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 

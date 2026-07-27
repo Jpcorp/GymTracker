@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 #[Fillable([
     'name', 'email', 'phone', 'birth_date', 'gender', 'start_date',
@@ -123,6 +124,26 @@ class Client extends Model
 
             return $row;
         });
+    }
+
+    /**
+     * Due date of the next 21-day evaluation: 21 days after the last evaluation's
+     * period_end, or after start_date if no evaluation exists yet.
+     */
+    public function nextEvaluationDate(): Carbon
+    {
+        $last = $this->evaluations()->orderByDesc('evaluation_number')->first();
+        $anchor = $last?->period_end ?? $this->start_date;
+
+        return $anchor->copy()->addDays(21);
+    }
+
+    /**
+     * Days remaining until the next evaluation is due; 0 or negative means due/overdue.
+     */
+    public function daysUntilNextEvaluation(): int
+    {
+        return (int) now()->startOfDay()->diffInDays($this->nextEvaluationDate()->copy()->startOfDay(), false);
     }
 
     /**
