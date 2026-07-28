@@ -67,4 +67,14 @@ return [
         'reps' => 'Repeticiones',
         'none_recorded' => 'Aún no hay registros de entrenamiento.',
     ],
+
+    'performance' => [
+        'e1rm_title' => '1RM Estimado',
+        'e1rm_series' => '1RM Estimado (kg)',
+        'volume_title' => 'Volumen de Entrenamiento por Grupo Muscular',
+        'rpe_title' => 'RPE en el Tiempo',
+        'rpe_series' => 'RPE promedio',
+        'no_muscle_group' => 'Sin grupo',
+        'week_label' => 'Sem. :date',
+    ],
 ];

@@ -48,6 +48,30 @@
         </form>
     </x-ui.card>
 
+    <x-ui.card>
+        <h2 class="text-sm font-bold text-white mb-4 flex items-center gap-1.5">
+            {{ __('routines.performance.volume_title') }}
+            <x-ui.chart-help text="Series × repeticiones × peso por semana, agrupado por grupo muscular. Permite ver si el entrenamiento está balanceado entre grupos o si alguno está quedando sub-entrenado." />
+        </h2>
+        @if ($volumeChartData['hasEnoughData'])
+            <div id="volume-chart-{{ $routine->id }}" data-progress-chart="{{ json_encode($volumeChartData) }}" wire:ignore></div>
+        @else
+            <p class="text-sm text-slate-400">{{ __('clients.chart.not_enough_data') }}</p>
+        @endif
+    </x-ui.card>
+
+    <x-ui.card>
+        <h2 class="text-sm font-bold text-white mb-4 flex items-center gap-1.5">
+            {{ __('routines.performance.rpe_title') }}
+            <x-ui.chart-help text="Esfuerzo percibido promedio por sesión (escala 1-10). Valores sostenidos en 9-10 pueden anticipar fatiga acumulada; lo ideal es variar el esfuerzo según la fase del plan." />
+        </h2>
+        @if ($rpeChartData['hasEnoughData'])
+            <div id="rpe-chart-{{ $routine->id }}" data-progress-chart="{{ json_encode($rpeChartData) }}" wire:ignore></div>
+        @else
+            <p class="text-sm text-slate-400">{{ __('clients.chart.not_enough_data') }}</p>
+        @endif
+    </x-ui.card>
+
     <div class="space-y-6">
         @forelse ($exercises as $exercise)
             <x-ui.card wire:key="exercise-{{ $exercise->id }}" class="space-y-4">
@@ -127,6 +151,18 @@
                 @else
                     <p class="text-xs text-slate-500 border-t border-slate-800 pt-4">{{ __('routines.workout_log.none_recorded') }}</p>
                 @endif
+
+                <div class="border-t border-slate-800 pt-4">
+                    <h4 class="text-xs font-bold text-white mb-3 flex items-center gap-1.5">
+                        {{ __('routines.performance.e1rm_title') }}
+                        <x-ui.chart-help text="Fuerza máxima estimada (fórmula de Epley) a partir del peso y las repeticiones logradas en cada sesión. Una curva ascendente indica ganancia real de fuerza, no solo más peso levantado con más repeticiones." />
+                    </h4>
+                    @if ($e1rmCharts[$exercise->id]['hasEnoughData'])
+                        <div id="e1rm-chart-{{ $exercise->id }}" data-progress-chart="{{ json_encode($e1rmCharts[$exercise->id]) }}" wire:ignore></div>
+                    @else
+                        <p class="text-xs text-slate-500">{{ __('clients.chart.not_enough_data') }}</p>
+                    @endif
+                </div>
             </x-ui.card>
         @empty
             <x-ui.card class="text-center text-sm text-slate-400">{{ __('routines.exercise.none_added') }}</x-ui.card>

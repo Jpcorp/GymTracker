@@ -176,10 +176,107 @@ class RoutineShow extends Component
 
     public function render()
     {
+        $exercises = $this->routine->exercises()
+            ->with(['workoutLogs' => fn ($query) => $query->orderByDesc('workout_date')->orderByDesc('id')])
+            ->get();
+
         return view('livewire.routine.routine-show', [
-            'exercises' => $this->routine->exercises()
-                ->with(['workoutLogs' => fn ($query) => $query->orderByDesc('workout_date')->orderByDesc('id')])
-                ->get(),
+            'exercises' => $exercises,
+            'e1rmCharts' => $exercises->mapWithKeys(fn ($exercise) => [$exercise->id => $this->e1rmChartData($exercise)]),
+            'volumeChartData' => $this->volumeByMuscleGroupChartData(),
+            'rpeChartData' => $this->rpeChartData(),
         ]);
+    }
+
+    /**
+     * Chart-ready payload for the estimated 1RM trend of a single exercise, using the
+     * Epley formula (e1RM = weight * (1 + reps/30)) against its workout log history.
+     * Logs with no weight or an unparseable/zero rep count are skipped (can't estimate).
+     */
+    public function e1rmChartData(Exercise $exercise): array
+    {
+        $points = $exercise->workoutLogs
+            ->filter(fn ($log) => $log->weight_kg !== null && (int) $log->completed_reps > 0)
+            ->sortBy('workout_date')
+            ->values();
+
+        return [
+            'labels' => $points->map(fn ($log) => $log->workout_date->format('Y-m-d'))->all(),
+            'series' => [[
+                'name' => __('routines.performance.e1rm_series'),
+                'data' => $points->map(fn ($log) => round((float) $log->weight_kg * (1 + ((int) $log->completed_reps) / 30), 2))->all(),
+            ]],
+            'hasEnoughData' => $points->count() >= 2,
+        ];
+    }
+
+    /**
+     * Chart-ready payload for training volume (weight * sets * reps) per muscle group,
+     * bucketed by ISO week, across every exercise in the current routine.
+     */
+    public function volumeByMuscleGroupChartData(): array
+    {
+        $exercises = $this->routine->exercises()->with('workoutLogs')->get();
+
+        $entries = collect();
+        foreach ($exercises as $exercise) {
+            $group = $exercise->muscle_group ?: __('routines.performance.no_muscle_group');
+
+            foreach ($exercise->workoutLogs as $log) {
+                $reps = (int) $log->completed_reps;
+                if ($log->weight_kg === null || $log->completed_sets === null || $reps <= 0) {
+                    continue;
+                }
+
+                $entries->push([
+                    'week' => $log->workout_date->copy()->startOfWeek()->format('Y-m-d'),
+                    'muscle_group' => $group,
+                    'volume' => (float) $log->weight_kg * $log->completed_sets * $reps,
+                ]);
+            }
+        }
+
+        $weeks = $entries->pluck('week')->unique()->sort()->values();
+        $groups = $entries->pluck('muscle_group')->unique()->values();
+
+        $series = $groups->map(fn ($group) => [
+            'name' => $group,
+            'data' => $weeks->map(fn ($week) => (float) $entries
+                ->where('week', $week)
+                ->where('muscle_group', $group)
+                ->sum('volume'))->all(),
+        ])->values()->all();
+
+        return [
+            'labels' => $weeks->map(fn ($week) => __('routines.performance.week_label', ['date' => $week]))->all(),
+            'series' => $series,
+            'hasEnoughData' => $entries->isNotEmpty(),
+            'type' => 'bar',
+        ];
+    }
+
+    /**
+     * Chart-ready payload for RPE over time across the current routine's workout logs,
+     * averaged per day when multiple logs (from different exercises) share a date.
+     */
+    public function rpeChartData(): array
+    {
+        $exercises = $this->routine->exercises()->with('workoutLogs')->get();
+
+        $byDate = $exercises
+            ->flatMap(fn ($exercise) => $exercise->workoutLogs)
+            ->filter(fn ($log) => $log->rpe !== null)
+            ->groupBy(fn ($log) => $log->workout_date->format('Y-m-d'))
+            ->map(fn ($logs) => round((float) $logs->avg('rpe'), 1))
+            ->sortKeys();
+
+        return [
+            'labels' => $byDate->keys()->all(),
+            'series' => [[
+                'name' => __('routines.performance.rpe_series'),
+                'data' => $byDate->values()->all(),
+            ]],
+            'hasEnoughData' => $byDate->count() >= 2,
+        ];
     }
 }

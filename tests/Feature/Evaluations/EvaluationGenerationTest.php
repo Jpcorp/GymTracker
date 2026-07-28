@@ -3,8 +3,12 @@
 use App\Models\Client;
 use App\Models\Evaluation;
 use App\Models\PhysicalMetric;
+use App\Notifications\EvaluationGenerated;
+use Illuminate\Support\Facades\Notification;
 
 test('command creates the first evaluation for a client whose start_date was 21+ days ago', function () {
+    Notification::fake();
+
     $client = Client::factory()->create([
         'status' => 'active',
         'start_date' => today()->subDays(21),
@@ -19,6 +23,10 @@ test('command creates the first evaluation for a client whose start_date was 21+
     expect($evaluation->period_start->toDateString())->toBe($client->start_date->toDateString());
     expect($evaluation->period_end->toDateString())->toBe($client->start_date->copy()->addDays(20)->toDateString());
     expect($evaluation->evaluated_at->toDateString())->toBe(today()->toDateString());
+
+    Notification::assertSentTo($client->trainer, EvaluationGenerated::class, function ($notification) use ($evaluation) {
+        return $notification->evaluation->is($evaluation);
+    });
 });
 
 test('command does not create an evaluation for a client whose start_date was less than 21 days ago', function () {
@@ -33,6 +41,8 @@ test('command does not create an evaluation for a client whose start_date was le
 });
 
 test('command does not duplicate an evaluation when run twice for the same period', function () {
+    Notification::fake();
+
     Client::factory()->create([
         'status' => 'active',
         'start_date' => today()->subDays(25),
@@ -42,6 +52,7 @@ test('command does not duplicate an evaluation when run twice for the same perio
     $this->artisan('evaluations:generate');
 
     expect(Evaluation::count())->toBe(1);
+    Notification::assertSentTimes(EvaluationGenerated::class, 1);
 });
 
 test('command computes evaluation_number/period_start/period_end for a second evaluation', function () {

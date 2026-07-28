@@ -7,7 +7,9 @@ use App\Models\BodyPhoto;
 use App\Models\Client;
 use App\Models\Evaluation;
 use App\Models\PhysicalMetric;
+use App\Notifications\EvaluationGenerated;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Notification;
 
 class GenerateEvaluations extends Command
 {
@@ -51,6 +53,10 @@ class GenerateEvaluations extends Command
 
             $generated++;
             $this->backfillEvaluationId($client, $evaluation, $periodStart, $periodEnd);
+
+            if ($client->trainer) {
+                Notification::send($client->trainer, new EvaluationGenerated($evaluation));
+            }
         });
 
         $this->info("Generated {$generated} evaluations.");

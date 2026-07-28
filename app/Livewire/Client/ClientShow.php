@@ -454,6 +454,10 @@ class ClientShow extends Component
             'moodRecords' => $this->client->moodRecords()->orderByDesc('week_start')->get(),
             'nutritionLogs' => $this->client->nutritionLogs()->orderByDesc('log_date')->get(),
             'satisfactionSurveys' => $this->client->satisfactionSurveys()->orderByDesc('survey_date')->get(),
+            'moodChartData' => $this->moodChartData(),
+            'nutritionChartData' => $this->nutritionChartData(),
+            'acwrChartData' => $this->acwrChartData(),
+            'symmetryChartData' => $this->symmetryChartData(),
         ]);
     }
 
@@ -495,4 +499,146 @@ class ClientShow extends Component
         ];
     }
 
+    private function moodChartSeries(): array
+    {
+        return [
+            'mood_level' => __('wellness.mood.mood_level'),
+            'energy_level' => __('wellness.mood.energy_level'),
+            'motivation_level' => __('wellness.mood.motivation_level'),
+        ];
+    }
+
+    /**
+     * Chart-ready payload for the mood trend chart: weeks ascending, one series
+     * per level field, skipping fields that are null across every record.
+     */
+    public function moodChartData(): array
+    {
+        $records = $this->client->moodRecords()->orderBy('week_start')->get();
+
+        $labels = $records->map(fn ($record) => $record->week_start->format('Y-m-d'))->values()->all();
+
+        $series = [];
+        foreach ($this->moodChartSeries() as $field => $label) {
+            if ($records->every(fn ($record) => $record->$field === null)) {
+                continue;
+            }
+
+            $series[] = [
+                'name' => $label,
+                'data' => $records->map(fn ($record) => $record->$field !== null ? (float) $record->$field : null)->values()->all(),
+            ];
+        }
+
+        return [
+            'labels' => $labels,
+            'series' => $series,
+            'hasEnoughData' => $records->count() >= 2,
+        ];
+    }
+
+    /**
+     * Chart-ready payload for the nutrition compliance chart: a single series with a
+     * 0-100 compliance percentage per log, computed from meals_logged/meals_planned
+     * when available, otherwise mapped from the compliance enum.
+     */
+    public function nutritionChartData(): array
+    {
+        $logs = $this->client->nutritionLogs()->orderBy('log_date')->get();
+
+        $complianceMap = ['complete' => 100, 'partial' => 50, 'missed' => 0];
+
+        $labels = $logs->map(fn ($log) => $log->log_date->format('Y-m-d'))->values()->all();
+
+        $data = $logs->map(function ($log) use ($complianceMap) {
+            if ($log->meals_planned) {
+                return (float) round($log->meals_logged / $log->meals_planned * 100);
+            }
+
+            return (float) $complianceMap[$log->compliance];
+        })->values()->all();
+
+        return [
+            'labels' => $labels,
+            'series' => [
+                ['name' => __('wellness.nutrition.compliance'), 'data' => $data],
+            ],
+            'hasEnoughData' => $logs->count() >= 2,
+        ];
+    }
+
+    /**
+     * Chart-ready payload for the ACWR (Acute:Chronic Workload Ratio) chart: one value per
+     * week over the trailing 12 weeks, using distinct attendance-day counts as the load proxy.
+     * Acute = current week's count, chronic = rolling 4-week average (including current week).
+     * Weeks where the chronic average is 0 are skipped (divide-by-zero guard).
+     */
+    public function acwrChartData(): array
+    {
+        $weeksBack = 12;
+        $today = now();
+
+        // Weekly attendance counts for the trailing 12 weeks plus the 3 prior weeks needed
+        // to compute the first week's chronic (rolling 4-week) average.
+        $weeklyCounts = [];
+        for ($i = $weeksBack + 3 - 1; $i >= 0; $i--) {
+            $weekStart = $today->copy()->subWeeks($i)->startOfWeek();
+            $weekEnd = $weekStart->copy()->endOfWeek();
+
+            $weeklyCounts[] = $this->client->attendances()
+                ->whereBetween('attendance_date', [$weekStart->format('Y-m-d'), $weekEnd->format('Y-m-d')])
+                ->distinct()
+                ->count('attendance_date');
+        }
+
+        $labels = [];
+        $data = [];
+
+        for ($i = 3; $i < count($weeklyCounts); $i++) {
+            $acute = $weeklyCounts[$i];
+            $chronic = array_sum(array_slice($weeklyCounts, $i - 3, 4)) / 4;
+
+            $weekStart = $today->copy()->subWeeks($weeksBack + 3 - 1 - $i)->startOfWeek();
+            $labels[] = $weekStart->format('Y-m-d');
+            $data[] = $chronic > 0 ? round($acute / $chronic, 2) : null;
+        }
+
+        return [
+            'labels' => $labels,
+            'series' => [
+                ['name' => __('clients.chart.acwr'), 'data' => $data],
+            ],
+            'hasEnoughData' => collect($data)->filter(fn ($value) => $value !== null)->count() >= 1,
+        ];
+    }
+
+    /**
+     * Chart-ready payload for the body symmetry chart: left vs right for arm/thigh
+     * measurements, taken from the client's most recent BodyMeasurement record.
+     */
+    public function symmetryChartData(): array
+    {
+        $measurement = $this->client->bodyMeasurements()->orderByDesc('recorded_at')->first();
+
+        if (! $measurement || ($measurement->right_arm_cm === null && $measurement->left_arm_cm === null
+            && $measurement->right_thigh_cm === null && $measurement->left_thigh_cm === null)) {
+            return ['labels' => [], 'series' => [], 'hasEnoughData' => false];
+        }
+
+        return [
+            'labels' => [__('clients.chart.arm'), __('clients.chart.thigh')],
+            'type' => 'bar',
+            'series' => [
+                ['name' => __('clients.chart.right'), 'data' => [
+                    $measurement->right_arm_cm !== null ? (float) $measurement->right_arm_cm : null,
+                    $measurement->right_thigh_cm !== null ? (float) $measurement->right_thigh_cm : null,
+                ]],
+                ['name' => __('clients.chart.left'), 'data' => [
+                    $measurement->left_arm_cm !== null ? (float) $measurement->left_arm_cm : null,
+                    $measurement->left_thigh_cm !== null ? (float) $measurement->left_thigh_cm : null,
+                ]],
+            ],
+            'hasEnoughData' => true,
+        ];
+    }
 }

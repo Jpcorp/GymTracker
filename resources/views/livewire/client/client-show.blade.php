@@ -183,6 +183,19 @@
                 </table>
             </div>
         </x-ui.card>
+
+        <x-ui.card>
+            <h2 class="text-sm font-bold text-white mb-4 flex items-center gap-1.5">
+                {{ __('clients.chart.symmetry_title') }}
+                <x-ui.chart-help text="Compara la medida derecha vs. izquierda de brazo y muslo del registro más reciente. Una diferencia mayor a 1-2 cm puede indicar un desequilibrio muscular a corregir en la rutina." />
+            </h2>
+
+            @if ($symmetryChartData['hasEnoughData'])
+                <div id="symmetry-chart-{{ $client->id }}" data-progress-chart="{{ json_encode($symmetryChartData) }}" wire:ignore></div>
+            @else
+                <p class="text-sm text-slate-400">{{ __('clients.chart.not_enough_data') }}</p>
+            @endif
+        </x-ui.card>
     </div>
 
     {{-- Tab: Fotos --}}
@@ -255,8 +268,10 @@
             <h2 class="text-sm font-bold text-white">{{ __('clients.evaluations.title') }}</h2>
 
             @forelse ($evaluations as $row)
-                @php [$evaluation, $metric, $comparison] = [$row['evaluation'], $row['metric'], $row['comparison']]; @endphp
-                <div wire:key="evaluation-{{ $evaluation->id }}" class="border border-slate-800 rounded-xl p-4">
+                @php [$evaluation, $metric, $comparison, $achievements] = [$row['evaluation'], $row['metric'], $row['comparison'], $row['achievements']]; @endphp
+                <div wire:key="evaluation-{{ $evaluation->id }}" class="relative pl-5 border-l-2 border-slate-800">
+                    <span class="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-amber-400"></span>
+                <div class="border border-slate-800 rounded-xl p-4">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-xs font-bold text-white flex items-center gap-1.5">
                             <x-ui.icon name="award" class="w-3.5 h-3.5 text-amber-400" />
@@ -304,6 +319,21 @@
                             </tbody>
                         </table>
                     @endif
+
+                    @if (! empty($achievements))
+                        <div class="mt-3 pt-3 border-t border-slate-800">
+                            <h4 class="text-[11px] font-bold text-amber-400 mb-1.5">{{ __('clients.evaluations.achievements') }}</h4>
+                            <ul class="space-y-1">
+                                @foreach ($achievements as $achievement)
+                                    <li class="text-xs text-slate-300 flex items-start gap-1.5">
+                                        <span class="text-emerald-400">&check;</span>
+                                        <span>{{ $achievement }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                </div>
                 </div>
             @empty
                 <p class="text-sm text-slate-400">{{ __('clients.evaluations.none_generated') }}</p>
@@ -314,7 +344,10 @@
     {{-- Tab: Grafico --}}
     <div x-show="tab === 'chart'" class="space-y-6">
         <x-ui.card>
-            <h2 class="text-sm font-bold text-white mb-4">{{ __('clients.chart.title') }}</h2>
+            <h2 class="text-sm font-bold text-white mb-4 flex items-center gap-1.5">
+                {{ __('clients.chart.title') }}
+                <x-ui.chart-help text="Evolución de peso, grasa corporal e IMC en el tiempo. Una tendencia descendente en peso y grasa corporal suele indicar progreso hacia la mayoría de los objetivos de composición corporal." />
+            </h2>
 
             @if ($chartData['hasEnoughData'])
                 {{-- ponytail: wire:ignore keeps ApexCharts' injected SVG safe from Livewire's morph, but it also means
@@ -414,6 +447,20 @@
                 </table>
             </div>
         </x-ui.card>
+
+        <x-ui.card>
+            <h2 class="text-sm font-bold text-white mb-4 flex items-center gap-1.5">
+                {{ __('clients.chart.acwr_title') }}
+                <x-ui.chart-help text="Compara la carga de entrenamiento de la última semana contra el promedio de las últimas 4. Entre 0.8 y 1.5 es zona saludable: por debajo hay pérdida de forma física, por encima aumenta el riesgo de lesión o sobreentrenamiento." />
+            </h2>
+
+            @if ($acwrChartData['hasEnoughData'])
+                <div id="acwr-chart-{{ $client->id }}" data-progress-chart="{{ json_encode($acwrChartData) }}" wire:ignore></div>
+                <p class="text-xs text-slate-400 mt-2">{{ __('clients.chart.acwr_caption') }}</p>
+            @else
+                <p class="text-sm text-slate-400">{{ __('clients.chart.not_enough_data') }}</p>
+            @endif
+        </x-ui.card>
     </div>
 
     {{-- Tab: Bienestar --}}
@@ -468,6 +515,19 @@
         </x-ui.card>
 
         <x-ui.card>
+            <h2 class="text-sm font-bold text-white mb-4 flex items-center gap-1.5">
+                {{ __('wellness.mood.title') }}
+                <x-ui.chart-help text="Ánimo, energía y motivación semanales en escala 1-10. Una tendencia sostenida a la baja puede anticipar fatiga o riesgo de abandono antes de que se note en la asistencia." />
+            </h2>
+
+            @if ($moodChartData['hasEnoughData'])
+                <div id="mood-chart-{{ $client->id }}" data-progress-chart="{{ json_encode($moodChartData) }}" wire:ignore></div>
+            @else
+                <p class="text-sm text-slate-400">{{ __('clients.chart.not_enough_data') }}</p>
+            @endif
+        </x-ui.card>
+
+        <x-ui.card>
             <h2 class="text-sm font-bold text-white mb-4">{{ __('wellness.nutrition.title') }}</h2>
 
             <form wire:submit="saveNutritionLog" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -516,6 +576,19 @@
                     </tbody>
                 </table>
             </div>
+        </x-ui.card>
+
+        <x-ui.card>
+            <h2 class="text-sm font-bold text-white mb-4 flex items-center gap-1.5">
+                {{ __('wellness.nutrition.title') }}
+                <x-ui.chart-help text="Porcentaje de cumplimiento del plan alimentario por registro. Valores sostenidos bajo 70% sugieren revisar el plan o reforzar la adherencia con el cliente." />
+            </h2>
+
+            @if ($nutritionChartData['hasEnoughData'])
+                <div id="nutrition-chart-{{ $client->id }}" data-progress-chart="{{ json_encode($nutritionChartData) }}" wire:ignore></div>
+            @else
+                <p class="text-sm text-slate-400">{{ __('clients.chart.not_enough_data') }}</p>
+            @endif
         </x-ui.card>
 
         <x-ui.card>

@@ -16,4 +16,5 @@ return [
     'active_routine' => 'Rutina Activa',
     'no_active_routine' => 'Sin rutina activa.',
     'exercises' => 'ejercicios',
+    'achievements' => 'Logros y Hitos del Período',
 ];

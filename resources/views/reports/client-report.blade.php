@@ -58,6 +58,15 @@
         @else
             <p class="muted">{{ __('reports.not_enough_data') }}</p>
         @endif
+
+        @if (! empty($latestEvaluation['achievements']))
+            <h2>{{ __('reports.achievements') }}</h2>
+            <ul>
+                @foreach ($latestEvaluation['achievements'] as $achievement)
+                    <li>{{ $achievement }}</li>
+                @endforeach
+            </ul>
+        @endif
     @else
         <p class="muted">{{ __('reports.none_generated') }}</p>
     @endif

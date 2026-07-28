@@ -116,6 +116,7 @@ class Client extends Model
                 'metric' => $metric,
                 'has_previous' => $previousMetric !== null,
                 'comparison' => $comparison,
+                'achievements' => $this->computeAchievements($evaluation),
             ];
 
             if ($metric) {
@@ -124,6 +125,60 @@ class Client extends Model
 
             return $row;
         });
+    }
+
+    /**
+     * "Logros y hitos del período" (RF 4.8): workout records, attendance %, nutrition
+     * compliance % for the given evaluation's period_start..period_end window.
+     */
+    private function computeAchievements(Evaluation $evaluation): array
+    {
+        $periodStart = $evaluation->period_start;
+        $periodEnd = $evaluation->period_end;
+        $achievements = [];
+
+        $logsInPeriod = $this->workoutLogs()
+            ->whereBetween('workout_date', [$periodStart, $periodEnd])
+            ->with('exercise')
+            ->get()
+            ->groupBy('exercise_id');
+
+        foreach ($logsInPeriod as $exerciseId => $logs) {
+            $currentMax = (float) $logs->max('weight_kg');
+            $priorMax = $this->workoutLogs()
+                ->where('exercise_id', $exerciseId)
+                ->where('workout_date', '<', $periodStart)
+                ->max('weight_kg');
+
+            if ($priorMax !== null && $currentMax > (float) $priorMax) {
+                $delta = round($currentMax - (float) $priorMax, 2);
+                $achievements[] = "Nuevo récord en {$logs->first()->exercise->name}: {$currentMax} kg (+{$delta} kg)";
+            }
+        }
+
+        $days = $periodStart->diffInDays($periodEnd) + 1;
+        $attendanceCount = $this->attendances()
+            ->whereBetween('attendance_date', [$periodStart, $periodEnd])
+            ->distinct()
+            ->count('attendance_date');
+
+        if ($attendanceCount > 0 && $days > 0) {
+            $pct = (int) round($attendanceCount / $days * 100);
+            $achievements[] = "Asistencia del {$pct}% ({$attendanceCount} de {$days} días posibles)";
+        }
+
+        $nutritionLogs = $this->nutritionLogs()
+            ->whereBetween('log_date', [$periodStart, $periodEnd])
+            ->whereNotNull('meals_planned')
+            ->where('meals_planned', '>', 0)
+            ->get();
+
+        if ($nutritionLogs->isNotEmpty()) {
+            $avgPct = $nutritionLogs->avg(fn ($log) => $log->meals_logged / $log->meals_planned) * 100;
+            $achievements[] = 'Cumplimiento alimentario promedio: '.round($avgPct).'%';
+        }
+
+        return $achievements;
     }
 
     /**

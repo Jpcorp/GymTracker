@@ -76,6 +76,14 @@ return [
     'chart' => [
         'title' => 'Gráfico de Progreso',
         'not_enough_data' => 'Aún no hay datos suficientes: registra al menos dos métricas físicas para ver el gráfico de progreso.',
+        'acwr_title' => 'Riesgo de Carga (ACWR)',
+        'acwr_caption' => 'Zona saludable: 0.8 – 1.5',
+        'acwr' => 'ACWR',
+        'symmetry_title' => 'Simetría Corporal',
+        'right' => 'Derecho',
+        'left' => 'Izquierdo',
+        'arm' => 'Brazo',
+        'thigh' => 'Muslo',
     ],
 
     'photos' => [
@@ -99,6 +107,7 @@ return [
         'previous' => 'Anterior',
         'delta' => 'Variación',
         'none_generated' => 'Aún no se han generado evaluaciones.',
+        'achievements' => 'Logros y Hitos del Período',
     ],
 
     'attendance' => [
