@@ -62,6 +62,51 @@ test('a mood series that is null across every record is omitted from the chart p
     expect($seriesNames)->toContain('Ánimo (1-10)');
 });
 
+test('sleep_hours series appears in the mood chart when at least two records have it set', function () {
+    $trainer = User::factory()->create();
+    $client = Client::factory()->for($trainer, 'trainer')->create();
+
+    MoodRecord::factory()->for($client)->create([
+        'week_start' => '2026-06-01',
+        'mood_level' => 8,
+        'sleep_hours' => 6.5,
+    ]);
+    MoodRecord::factory()->for($client)->create([
+        'week_start' => '2026-07-01',
+        'mood_level' => 6,
+        'sleep_hours' => 7.5,
+    ]);
+
+    $component = Livewire::actingAs($trainer)->test(ClientShow::class, ['client' => $client]);
+    $data = $component->instance()->moodChartData();
+
+    $sleepSeries = collect($data['series'])->firstWhere('name', 'Horas de sueño');
+    expect($sleepSeries)->not->toBeNull();
+    expect($sleepSeries['data'])->toBe([6.5, 7.5]);
+});
+
+test('sleep_hours series is omitted from the mood chart when no record has it set', function () {
+    $trainer = User::factory()->create();
+    $client = Client::factory()->for($trainer, 'trainer')->create();
+
+    MoodRecord::factory()->for($client)->create([
+        'week_start' => '2026-06-01',
+        'mood_level' => 8,
+        'sleep_hours' => null,
+    ]);
+    MoodRecord::factory()->for($client)->create([
+        'week_start' => '2026-07-01',
+        'mood_level' => 6,
+        'sleep_hours' => null,
+    ]);
+
+    $component = Livewire::actingAs($trainer)->test(ClientShow::class, ['client' => $client]);
+    $data = $component->instance()->moodChartData();
+
+    $seriesNames = collect($data['series'])->pluck('name');
+    expect($seriesNames)->not->toContain('Horas de sueño');
+});
+
 test('a client with fewer than two mood records is flagged as not having enough chart data', function () {
     $trainer = User::factory()->create();
     $client = Client::factory()->for($trainer, 'trainer')->create();

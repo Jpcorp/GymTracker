@@ -11,6 +11,8 @@ return [
         'mood_level' => 'Ánimo (1-10)',
         'energy_level' => 'Energía (1-10)',
         'motivation_level' => 'Motivación (1-10)',
+        'sleep_hours' => 'Horas de sueño',
+        'sleep_quality' => 'Calidad de sueño (1-10)',
         'notes' => 'Notas',
         'none_recorded' => 'Aún no hay registros de ánimo.',
     ],

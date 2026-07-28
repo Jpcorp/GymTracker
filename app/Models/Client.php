@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'name', 'email', 'phone', 'birth_date', 'gender', 'start_date',
     'goal', 'profile_photo', 'status', 'trainer_id',
+    'goal_metric', 'goal_target_value', 'goal_target_date',
 ])]
 class Client extends Model
 {
@@ -23,6 +24,7 @@ class Client extends Model
         return [
             'birth_date' => 'date',
             'start_date' => 'date',
+            'goal_target_date' => 'date',
         ];
     }
 
@@ -214,5 +216,50 @@ class Client extends Model
             ->count('attendance_date');
 
         return (int) round($distinctDays / $now->day * 100);
+    }
+
+    /**
+     * SMART goal progress: baseline (earliest recorded value) vs current (latest) vs
+     * target for `goal_metric`, as a 0-100 clamped percent. Null if no goal is set or
+     * no PhysicalMetric data exists yet for the chosen metric.
+     */
+    public function goalProgress(): ?array
+    {
+        if (! $this->goal_metric || $this->goal_target_value === null) {
+            return null;
+        }
+
+        $field = $this->goal_metric;
+
+        $baselineMetric = $this->physicalMetrics()->whereNotNull($field)->orderBy('recorded_at')->first();
+        $currentMetric = $this->physicalMetrics()->whereNotNull($field)->orderByDesc('recorded_at')->first();
+
+        if (! $baselineMetric || ! $currentMetric) {
+            return null;
+        }
+
+        $baseline = (float) $baselineMetric->$field;
+        $current = (float) $currentMetric->$field;
+        $target = (float) $this->goal_target_value;
+
+        if ($target == $baseline) {
+            $percent = $current >= $target ? 100 : 0;
+        } else {
+            $percent = (int) round((($current - $baseline) / ($target - $baseline)) * 100);
+        }
+
+        $percent = max(0, min(100, $percent));
+
+        return [
+            'metric' => $this->goal_metric,
+            'baseline' => $baseline,
+            'current' => $current,
+            'target' => $target,
+            'percent' => $percent,
+            'target_date' => $this->goal_target_date,
+            'days_remaining' => $this->goal_target_date
+                ? (int) now()->startOfDay()->diffInDays($this->goal_target_date->copy()->startOfDay(), false)
+                : null,
+        ];
     }
 }

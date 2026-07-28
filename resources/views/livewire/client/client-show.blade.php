@@ -27,6 +27,33 @@
                         <span>{{ __('clients.start_date') }}: {{ $client->start_date->format('Y-m-d') }}</span>
                         <span>{{ __('clients.trainer') }}: <strong class="text-slate-300">{{ $client->trainer?->name }}</strong></span>
                     </div>
+
+                    @if ($goalProgress)
+                        <div class="pt-2 max-w-sm">
+                            <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
+                                <span>
+                                    {{ __('clients.goal_progress', [
+                                        'metric' => __('clients.metrics.'.$goalProgress['metric']),
+                                        'current' => $goalProgress['current'],
+                                        'target' => $goalProgress['target'],
+                                        'percent' => $goalProgress['percent'],
+                                    ]) }}
+                                </span>
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                <div class="h-full bg-cyan-500 rounded-full" style="width: {{ $goalProgress['percent'] }}%"></div>
+                            </div>
+                            @if ($goalProgress['days_remaining'] !== null)
+                                <p class="text-[11px] text-slate-500 mt-1">
+                                    @if ($goalProgress['days_remaining'] < 0)
+                                        {{ __('clients.goal_overdue', ['days' => abs($goalProgress['days_remaining'])]) }}
+                                    @else
+                                        {{ __('clients.goal_days_remaining', ['days' => $goalProgress['days_remaining']]) }}
+                                    @endif
+                                </p>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -475,6 +502,8 @@
                 <x-ui.input label="{{ __('wellness.mood.mood_level') }}" name="mood_level" wire:model="mood_level" type="number" min="1" max="10" />
                 <x-ui.input label="{{ __('wellness.mood.energy_level') }}" name="mood_energy_level" wire:model="mood_energy_level" type="number" min="1" max="10" />
                 <x-ui.input label="{{ __('wellness.mood.motivation_level') }}" name="mood_motivation_level" wire:model="mood_motivation_level" type="number" min="1" max="10" />
+                <x-ui.input label="{{ __('wellness.mood.sleep_hours') }}" name="mood_sleep_hours" wire:model="mood_sleep_hours" type="number" step="0.5" min="0" max="24" />
+                <x-ui.input label="{{ __('wellness.mood.sleep_quality') }}" name="mood_sleep_quality" wire:model="mood_sleep_quality" type="number" min="1" max="10" />
                 <x-ui.textarea label="{{ __('wellness.mood.notes') }}" name="mood_notes" wire:model="mood_notes" class="sm:col-span-3" rows="2" />
 
                 <div class="sm:col-span-3 flex justify-end">
@@ -493,6 +522,8 @@
                             <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('wellness.mood.mood_level') }}</th>
                             <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('wellness.mood.energy_level') }}</th>
                             <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('wellness.mood.motivation_level') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('wellness.mood.sleep_hours') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('wellness.mood.sleep_quality') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-800">
@@ -503,10 +534,12 @@
                                 <td class="px-4 py-3 text-slate-400">{{ $mood->mood_level }}</td>
                                 <td class="px-4 py-3 text-slate-400">{{ $mood->energy_level ?? '—' }}</td>
                                 <td class="px-4 py-3 text-slate-400">{{ $mood->motivation_level ?? '—' }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ $mood->sleep_hours ?? '—' }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ $mood->sleep_quality ?? '—' }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-4 py-6 text-center text-slate-400">{{ __('wellness.mood.none_recorded') }}</td>
+                                <td colspan="7" class="px-4 py-6 text-center text-slate-400">{{ __('wellness.mood.none_recorded') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

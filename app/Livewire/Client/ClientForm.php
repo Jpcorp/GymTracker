@@ -26,6 +26,12 @@ class ClientForm extends Component
 
     public ?string $goal = null;
 
+    public ?string $goal_metric = null;
+
+    public ?string $goal_target_value = null;
+
+    public ?string $goal_target_date = null;
+
     public function mount(?Client $client = null): void
     {
         if ($client && $client->exists) {
@@ -39,6 +45,9 @@ class ClientForm extends Component
             $this->gender = $client->gender;
             $this->start_date = $client->start_date->format('Y-m-d');
             $this->goal = $client->goal;
+            $this->goal_metric = $client->goal_metric;
+            $this->goal_target_value = $client->goal_target_value;
+            $this->goal_target_date = $client->goal_target_date?->format('Y-m-d');
         }
     }
 
@@ -52,6 +61,9 @@ class ClientForm extends Component
             'gender' => ['required', 'in:male,female,other'],
             'start_date' => ['required', 'date'],
             'goal' => ['nullable', 'string'],
+            'goal_metric' => ['nullable', 'in:weight_kg,body_fat_percentage'],
+            'goal_target_value' => ['nullable', 'numeric'],
+            'goal_target_date' => ['nullable', 'date'],
         ];
     }
 

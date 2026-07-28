@@ -82,6 +82,10 @@ class ClientShow extends Component
 
     public ?string $mood_motivation_level = null;
 
+    public ?string $mood_sleep_hours = null;
+
+    public ?string $mood_sleep_quality = null;
+
     public ?string $mood_notes = null;
 
     public string $nutrition_log_date = '';
@@ -342,6 +346,8 @@ class ClientShow extends Component
             'mood_level' => ['required', 'integer', 'between:1,10'],
             'mood_energy_level' => ['nullable', 'integer', 'between:1,10'],
             'mood_motivation_level' => ['nullable', 'integer', 'between:1,10'],
+            'mood_sleep_hours' => ['nullable', 'numeric', 'between:0,24'],
+            'mood_sleep_quality' => ['nullable', 'integer', 'between:1,10'],
             'mood_notes' => ['nullable', 'string'],
         ];
     }
@@ -358,10 +364,12 @@ class ClientShow extends Component
             'mood_level' => $data['mood_level'],
             'energy_level' => $data['mood_energy_level'],
             'motivation_level' => $data['mood_motivation_level'],
+            'sleep_hours' => $data['mood_sleep_hours'],
+            'sleep_quality' => $data['mood_sleep_quality'],
             'notes' => $data['mood_notes'],
         ]);
 
-        $this->reset(['mood_level', 'mood_energy_level', 'mood_motivation_level', 'mood_notes']);
+        $this->reset(['mood_level', 'mood_energy_level', 'mood_motivation_level', 'mood_sleep_hours', 'mood_sleep_quality', 'mood_notes']);
         $this->mood_week_start = now()->startOfWeek()->format('Y-m-d');
         $this->mood_week_end = now()->endOfWeek()->format('Y-m-d');
     }
@@ -458,6 +466,7 @@ class ClientShow extends Component
             'nutritionChartData' => $this->nutritionChartData(),
             'acwrChartData' => $this->acwrChartData(),
             'symmetryChartData' => $this->symmetryChartData(),
+            'goalProgress' => $this->client->goalProgress(),
         ]);
     }
 
@@ -505,6 +514,7 @@ class ClientShow extends Component
             'mood_level' => __('wellness.mood.mood_level'),
             'energy_level' => __('wellness.mood.energy_level'),
             'motivation_level' => __('wellness.mood.motivation_level'),
+            'sleep_hours' => __('wellness.mood.sleep_hours'),
         ];
     }
 

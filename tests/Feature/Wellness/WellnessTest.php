@@ -22,6 +22,8 @@ test('a trainer can record a mood entry and it appears in the history', function
         ->set('mood_level', 8)
         ->set('mood_energy_level', 7)
         ->set('mood_motivation_level', 9)
+        ->set('mood_sleep_hours', 7.5)
+        ->set('mood_sleep_quality', 6)
         ->set('mood_notes', 'Buena semana')
         ->call('saveMood')
         ->assertHasNoErrors();
@@ -30,6 +32,24 @@ test('a trainer can record a mood entry and it appears in the history', function
 
     expect($mood->mood_level)->toBe(8);
     expect($mood->week_start->format('Y-m-d'))->toBe('2026-07-20');
+    expect((float) $mood->sleep_hours)->toBe(7.5);
+    expect($mood->sleep_quality)->toBe(6);
+});
+
+test('a mood entry with sleep tracking appears in the history table', function () {
+    $trainer = User::factory()->create();
+    $client = Client::factory()->for($trainer, 'trainer')->create();
+
+    Livewire::actingAs($trainer)
+        ->test(ClientShow::class, ['client' => $client])
+        ->set('mood_week_start', '2026-07-20')
+        ->set('mood_week_end', '2026-07-26')
+        ->set('mood_level', 8)
+        ->set('mood_sleep_hours', 6.5)
+        ->set('mood_sleep_quality', 4)
+        ->call('saveMood')
+        ->assertSee('6.5')
+        ->assertSee('4');
 });
 
 test('a trainer can record a nutrition log and it appears in the history', function () {

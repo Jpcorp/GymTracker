@@ -29,6 +29,22 @@
 
             <x-ui.textarea label="{{ __('clients.goal') }}" name="goal" wire:model="goal" rows="3" />
 
+            <div class="space-y-4 pt-2 border-t border-slate-800">
+                <h2 class="text-xs font-bold text-slate-300 pt-4">{{ __('clients.goal_smart_title') }}</h2>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <x-ui.select label="{{ __('clients.goal_metric_label') }}" name="goal_metric" wire:model="goal_metric">
+                        <option value="">{{ __('clients.goal_no_target') }}</option>
+                        <option value="weight_kg">{{ __('clients.goal_metric_weight') }}</option>
+                        <option value="body_fat_percentage">{{ __('clients.goal_metric_body_fat') }}</option>
+                    </x-ui.select>
+
+                    <x-ui.input label="{{ __('clients.goal_target_value') }}" name="goal_target_value" wire:model="goal_target_value" type="number" step="0.01" />
+
+                    <x-ui.input label="{{ __('clients.goal_target_date') }}" name="goal_target_date" wire:model="goal_target_date" type="date" />
+                </div>
+            </div>
+
             <div class="flex items-center justify-end gap-3 pt-2">
                 <a href="{{ route('clients.index') }}" wire:navigate class="text-xs font-semibold text-slate-400 hover:text-slate-200">
                     {{ __('clients.cancel') }}

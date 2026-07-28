@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'client_id', 'week_start', 'week_end', 'mood_level', 'energy_level', 'motivation_level', 'notes',
+    'client_id', 'week_start', 'week_end', 'mood_level', 'energy_level', 'motivation_level', 'sleep_hours', 'sleep_quality', 'notes',
 ])]
 class MoodRecord extends Model
 {
