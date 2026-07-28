@@ -3,6 +3,7 @@
 namespace App\Livewire\Client;
 
 use App\Models\Client;
+use App\Models\Injury;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
@@ -110,6 +111,16 @@ class ClientShow extends Component
 
     public ?string $satisfaction_comments = null;
 
+    public string $injury_body_part = '';
+
+    public string $injury_reported_date = '';
+
+    public ?string $injury_severity = null;
+
+    public string $injury_status = 'active';
+
+    public ?string $injury_notes = null;
+
     public function mount(Client $client): void
     {
         $this->authorize('view', $client);
@@ -125,6 +136,7 @@ class ClientShow extends Component
         $this->mood_week_end = now()->endOfWeek()->format('Y-m-d');
         $this->nutrition_log_date = now()->format('Y-m-d');
         $this->satisfaction_survey_date = now()->format('Y-m-d');
+        $this->injury_reported_date = now()->format('Y-m-d');
     }
 
     protected function rules(): array
@@ -435,6 +447,45 @@ class ClientShow extends Component
         $this->satisfaction_survey_date = now()->format('Y-m-d');
     }
 
+    protected function injuryRules(): array
+    {
+        return [
+            'injury_body_part' => ['required', 'string', 'max:100'],
+            'injury_reported_date' => ['required', 'date'],
+            'injury_severity' => ['required', 'integer', 'between:1,10'],
+            'injury_status' => ['required', 'in:active,recovering,resolved'],
+            'injury_notes' => ['nullable', 'string'],
+        ];
+    }
+
+    public function saveInjury(): void
+    {
+        $this->authorize('update', $this->client);
+
+        $data = $this->validate($this->injuryRules());
+
+        $this->client->injuries()->create([
+            'body_part' => $data['injury_body_part'],
+            'reported_date' => $data['injury_reported_date'],
+            'severity' => $data['injury_severity'],
+            'status' => $data['injury_status'],
+            'notes' => $data['injury_notes'],
+            'resolved_date' => $data['injury_status'] === 'resolved' ? now()->format('Y-m-d') : null,
+        ]);
+
+        $this->reset(['injury_body_part', 'injury_severity', 'injury_notes']);
+        $this->injury_status = 'active';
+        $this->injury_reported_date = now()->format('Y-m-d');
+    }
+
+    public function resolveInjury(Injury $injury): void
+    {
+        $this->authorize('update', $this->client);
+        abort_unless($injury->client_id === $this->client->id, 404);
+
+        $injury->update(['status' => 'resolved', 'resolved_date' => now()->format('Y-m-d')]);
+    }
+
     /**
      * Distinct attendance days this month / calendar days elapsed so far this month, rounded to a whole percent.
      */
@@ -468,6 +519,8 @@ class ClientShow extends Component
             'symmetryChartData' => $this->symmetryChartData(),
             'goalProgress' => $this->client->goalProgress(),
             'deloadRecommended' => $this->client->deloadRecommended(),
+            'injuries' => $this->client->injuries()->orderByDesc('reported_date')->get(),
+            'activeInjuriesCount' => $this->client->activeInjuriesCount(),
         ]);
     }
 

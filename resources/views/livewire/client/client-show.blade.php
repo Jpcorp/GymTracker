@@ -15,6 +15,12 @@
                             $statusColor = ['active' => 'emerald', 'paused' => 'amber', 'inactive' => 'rose'][$client->status] ?? 'slate';
                         @endphp
                         <x-ui.badge :color="$statusColor">{{ __('clients.statuses.'.$client->status) }}</x-ui.badge>
+                        @if ($activeInjuriesCount > 0)
+                            <x-ui.badge color="rose">
+                                <x-ui.icon name="warning" class="w-3 h-3 inline -mt-0.5" />
+                                {{ __('clients.injuries.active_badge', ['count' => $activeInjuriesCount]) }}
+                            </x-ui.badge>
+                        @endif
                     </div>
 
                     @if ($client->goal)
@@ -88,6 +94,7 @@
                 ['id' => 'chart', 'label' => __('clients.chart.title'), 'icon' => 'chart'],
                 ['id' => 'attendance', 'label' => __('clients.attendance.title'), 'icon' => 'clock'],
                 ['id' => 'wellness', 'label' => __('wellness.title'), 'icon' => 'award'],
+                ['id' => 'injuries', 'label' => __('clients.injuries.title'), 'icon' => 'warning'],
             ]" />
 
             <a href="{{ route('clients.routines.index', $client) }}" wire:navigate
@@ -672,6 +679,76 @@
                         @empty
                             <tr>
                                 <td colspan="5" class="px-4 py-6 text-center text-slate-400">{{ __('wellness.satisfaction.none_recorded') }}</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </x-ui.card>
+    </div>
+
+    {{-- Tab: Lesiones --}}
+    <div x-show="tab === 'injuries'" class="space-y-6">
+        <x-ui.card>
+            <h2 class="text-sm font-bold text-white mb-4">{{ __('clients.injuries.title') }}</h2>
+
+            <form wire:submit="saveInjury" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <x-ui.input label="{{ __('clients.injuries.body_part') }}" name="injury_body_part" wire:model="injury_body_part" type="text" placeholder="{{ __('clients.injuries.body_part_placeholder') }}" />
+                <x-ui.input label="{{ __('clients.injuries.reported_date') }}" name="injury_reported_date" wire:model="injury_reported_date" type="date" />
+                <x-ui.input label="{{ __('clients.injuries.severity') }}" name="injury_severity" wire:model="injury_severity" type="number" min="1" max="10" />
+
+                <x-ui.select label="{{ __('clients.injuries.status') }}" name="injury_status" wire:model="injury_status">
+                    <option value="active">{{ __('clients.injuries.statuses.active') }}</option>
+                    <option value="recovering">{{ __('clients.injuries.statuses.recovering') }}</option>
+                    <option value="resolved">{{ __('clients.injuries.statuses.resolved') }}</option>
+                </x-ui.select>
+
+                <div class="sm:col-span-4">
+                    <x-ui.input label="{{ __('clients.injuries.notes') }}" name="injury_notes" wire:model="injury_notes" type="text" />
+                </div>
+
+                <div class="sm:col-span-4 flex justify-end">
+                    <x-ui.button type="submit" variant="primary">{{ __('clients.injuries.save') }}</x-ui.button>
+                </div>
+            </form>
+        </x-ui.card>
+
+        <x-ui.card padding="p-0">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-800 text-sm">
+                    <thead class="bg-slate-800/50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('clients.injuries.reported_date') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('clients.injuries.body_part') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('clients.injuries.severity') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('clients.injuries.status') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('clients.injuries.notes') }}</th>
+                            <th class="px-4 py-3"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        @forelse ($injuries as $injury)
+                            @php
+                                $injuryStatusColor = ['active' => 'rose', 'recovering' => 'amber', 'resolved' => 'emerald'][$injury->status] ?? 'slate';
+                            @endphp
+                            <tr wire:key="injury-{{ $injury->id }}">
+                                <td class="px-4 py-3 text-slate-200">{{ $injury->reported_date->format('Y-m-d') }}</td>
+                                <td class="px-4 py-3 text-slate-200">{{ $injury->body_part }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ $injury->severity }}/10</td>
+                                <td class="px-4 py-3"><x-ui.badge :color="$injuryStatusColor">{{ __('clients.injuries.statuses.'.$injury->status) }}</x-ui.badge></td>
+                                <td class="px-4 py-3 text-slate-400">{{ $injury->notes ?? '—' }}</td>
+                                <td class="px-4 py-3 text-right">
+                                    @if ($injury->status !== 'resolved')
+                                        <button type="button" wire:click="resolveInjury({{ $injury->id }})" wire:confirm="{{ __('clients.injuries.resolve_confirm') }}"
+                                                class="text-[11px] font-bold text-emerald-400 hover:text-emerald-300">
+                                            {{ __('clients.injuries.mark_resolved') }}
+                                        </button>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-4 py-6 text-center text-slate-400">{{ __('clients.injuries.none_recorded') }}</td>
                             </tr>
                         @endforelse
                     </tbody>

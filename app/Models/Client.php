@@ -70,6 +70,21 @@ class Client extends Model
         return $this->hasMany(MoodRecord::class);
     }
 
+    public function injuries(): HasMany
+    {
+        return $this->hasMany(Injury::class);
+    }
+
+    /**
+     * Count of injuries not yet marked resolved — surfaced as a warning badge so a trainer
+     * sees it before assigning load, closing the loop between the ACWR risk chart and actual
+     * injury outcomes (per athlete-monitoring/injury-surveillance practice).
+     */
+    public function activeInjuriesCount(): int
+    {
+        return $this->injuries()->where('status', '!=', 'resolved')->count();
+    }
+
     public function nutritionLogs(): HasMany
     {
         return $this->hasMany(NutritionLog::class);

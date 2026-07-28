@@ -101,6 +101,26 @@ return [
         'recommended_text' => 'Este cliente lleva varias semanas sin una semana de descarga programada. Considera agregar una rutina en fase de descarga.',
     ],
 
+    'injuries' => [
+        'title' => 'Lesiones',
+        'active_badge' => 'Lesiones activas: :count',
+        'body_part' => 'Zona afectada',
+        'body_part_placeholder' => 'Ej. Rodilla derecha',
+        'reported_date' => 'Fecha de reporte',
+        'severity' => 'Severidad (1-10)',
+        'status' => 'Estado',
+        'notes' => 'Notas',
+        'save' => 'Registrar Lesión',
+        'mark_resolved' => 'Marcar resuelta',
+        'resolve_confirm' => '¿Marcar esta lesión como resuelta?',
+        'none_recorded' => 'No hay lesiones registradas.',
+        'statuses' => [
+            'active' => 'Activa',
+            'recovering' => 'En recuperación',
+            'resolved' => 'Resuelta',
+        ],
+    ],
+
     'photos' => [
         'title' => 'Subir Fotos Corporales',
         'save' => 'Subir Fotos',
