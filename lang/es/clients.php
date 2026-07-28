@@ -96,6 +96,11 @@ return [
         'thigh' => 'Muslo',
     ],
 
+    'deload' => [
+        'recommended_title' => 'Recomendación de descarga',
+        'recommended_text' => 'Este cliente lleva varias semanas sin una semana de descarga programada. Considera agregar una rutina en fase de descarga.',
+    ],
+
     'photos' => [
         'title' => 'Subir Fotos Corporales',
         'save' => 'Subir Fotos',

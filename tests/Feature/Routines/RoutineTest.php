@@ -58,6 +58,60 @@ test('a trainer gets a 403 on another trainer\'s client routine pages', function
     $this->actingAs($trainer)->get(route('clients.routines.show', [$client, $routine]))->assertForbidden();
 });
 
+test('a trainer can create a routine with a specific phase', function () {
+    $trainer = User::factory()->create();
+    $client = Client::factory()->for($trainer, 'trainer')->create();
+
+    Livewire::actingAs($trainer)
+        ->test(RoutineForm::class, ['client' => $client])
+        ->set('name', 'Strength Block')
+        ->set('weekly_frequency', '4')
+        ->set('start_date', '2026-07-01')
+        ->set('phase', 'intensification')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Routine::sole()->phase)->toBe('intensification');
+});
+
+test('a trainer can edit an existing routine\'s phase', function () {
+    $trainer = User::factory()->create();
+    $client = Client::factory()->for($trainer, 'trainer')->create();
+    $routine = Routine::factory()->for($client)->create(['phase' => 'accumulation']);
+
+    Livewire::actingAs($trainer)
+        ->test(RoutineForm::class, ['client' => $client, 'routine' => $routine])
+        ->set('phase', 'deload')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($routine->fresh()->phase)->toBe('deload');
+});
+
+test('validation rejects an invalid phase value', function () {
+    $trainer = User::factory()->create();
+    $client = Client::factory()->for($trainer, 'trainer')->create();
+
+    Livewire::actingAs($trainer)
+        ->test(RoutineForm::class, ['client' => $client])
+        ->set('name', 'Bad Phase')
+        ->set('weekly_frequency', '4')
+        ->set('start_date', '2026-07-01')
+        ->set('phase', 'bogus')
+        ->call('save')
+        ->assertHasErrors(['phase']);
+});
+
+test('routine list renders the phase badge for each routine', function () {
+    $trainer = User::factory()->create();
+    $client = Client::factory()->for($trainer, 'trainer')->create();
+    Routine::factory()->for($client)->create(['phase' => 'realization']);
+
+    Livewire::actingAs($trainer)
+        ->test(RoutineList::class, ['client' => $client])
+        ->assertSee(__('routines.phases.realization'));
+});
+
 test('routine list shows exercise count and can delete a routine', function () {
     $trainer = User::factory()->create();
     $client = Client::factory()->for($trainer, 'trainer')->create();

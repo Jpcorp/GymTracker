@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'client_id', 'name', 'description', 'weekly_frequency',
-    'start_date', 'end_date', 'is_active',
+    'start_date', 'end_date', 'is_active', 'phase',
 ])]
 class Routine extends Model
 {

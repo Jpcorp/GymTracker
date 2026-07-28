@@ -1,4 +1,7 @@
 <div class="space-y-6">
+    @php
+        $phaseColors = ['accumulation' => 'cyan', 'intensification' => 'amber', 'realization' => 'emerald', 'deload' => 'violet'];
+    @endphp
     <x-ui.card class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-xl font-extrabold text-white">{{ $routine->name }}</h1>
@@ -11,6 +14,7 @@
                 @else
                     <x-ui.badge color="slate">{{ __('routines.statuses.inactive') }}</x-ui.badge>
                 @endif
+                <x-ui.badge :color="$phaseColors[$routine->phase] ?? 'slate'">{{ __('routines.phases.'.$routine->phase) }}</x-ui.badge>
             </p>
             @if ($routine->description)
                 <p class="text-xs text-slate-300 mt-2">{{ $routine->description }}</p>

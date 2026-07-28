@@ -19,6 +19,8 @@ class Client extends Model
 {
     use HasFactory, SoftDeletes;
 
+    private const DELOAD_INTERVAL_WEEKS = 6;
+
     protected function casts(): array
     {
         return [
@@ -261,5 +263,24 @@ class Client extends Model
                 ? (int) now()->startOfDay()->diffInDays($this->goal_target_date->copy()->startOfDay(), false)
                 : null,
         ];
+    }
+
+    /**
+     * True when the client has gone DELOAD_INTERVAL_WEEKS or more without a deload-phase routine,
+     * counted from their earliest active-training routine (or their most recent deload's end, if any).
+     */
+    public function deloadRecommended(): bool
+    {
+        if ($this->routines()->count() === 0) {
+            return false;
+        }
+
+        $lastDeload = $this->routines()->where('phase', 'deload')->orderByDesc('start_date')->first();
+
+        $anchor = $lastDeload
+            ? ($lastDeload->end_date ?? $lastDeload->start_date)
+            : $this->routines()->orderBy('start_date')->first()->start_date;
+
+        return $anchor->diffInWeeks(now()) >= self::DELOAD_INTERVAL_WEEKS;
     }
 }

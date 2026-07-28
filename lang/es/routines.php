@@ -22,6 +22,13 @@ return [
         'inactive' => 'Inactivo',
     ],
 
+    'phases' => [
+        'accumulation' => 'Acumulación',
+        'intensification' => 'Intensificación',
+        'realization' => 'Realización',
+        'deload' => 'Descarga',
+    ],
+
     'form' => [
         'edit_title' => 'Editar Rutina',
         'new_title' => 'Nueva Rutina',
@@ -31,6 +38,13 @@ return [
         'start_date' => 'Fecha de inicio',
         'end_date' => 'Fecha de término',
         'save' => 'Guardar Rutina',
+        'phase' => 'Fase de entrenamiento',
+        'phases' => [
+            'accumulation' => 'Acumulación (volumen base)',
+            'intensification' => 'Intensificación (fuerza)',
+            'realization' => 'Realización (pico/competencia)',
+            'deload' => 'Descarga (recuperación planificada)',
+        ],
     ],
 
     'exercise' => [

@@ -26,6 +26,8 @@ class RoutineForm extends Component
 
     public bool $is_active = true;
 
+    public string $phase = 'accumulation';
+
     public function mount(Client $client, ?Routine $routine = null): void
     {
         $this->authorize('update', $client);
@@ -42,6 +44,7 @@ class RoutineForm extends Component
             $this->start_date = $routine->start_date->format('Y-m-d');
             $this->end_date = $routine->end_date?->format('Y-m-d');
             $this->is_active = $routine->is_active;
+            $this->phase = $routine->phase;
         } else {
             $this->start_date = now()->format('Y-m-d');
         }
@@ -56,6 +59,7 @@ class RoutineForm extends Component
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'is_active' => ['boolean'],
+            'phase' => ['required', 'in:accumulation,intensification,realization,deload'],
         ];
     }
 

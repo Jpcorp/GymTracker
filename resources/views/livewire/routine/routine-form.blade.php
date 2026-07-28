@@ -16,6 +16,13 @@
 
             <x-ui.input label="{{ __('routines.weekly_frequency') }}" name="weekly_frequency" wire:model="weekly_frequency" type="number" min="1" max="7" />
 
+            <x-ui.select label="{{ __('routines.form.phase') }}" name="phase" wire:model="phase">
+                <option value="accumulation">{{ __('routines.form.phases.accumulation') }}</option>
+                <option value="intensification">{{ __('routines.form.phases.intensification') }}</option>
+                <option value="realization">{{ __('routines.form.phases.realization') }}</option>
+                <option value="deload">{{ __('routines.form.phases.deload') }}</option>
+            </x-ui.select>
+
             <div class="flex items-end pb-2">
                 <label class="inline-flex items-center gap-2 text-xs font-semibold text-slate-300">
                     <input type="checkbox" wire:model="is_active" class="rounded border-slate-700 bg-slate-800 text-cyan-500 focus:ring-cyan-500" />

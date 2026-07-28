@@ -475,6 +475,13 @@
             </div>
         </x-ui.card>
 
+        @if ($deloadRecommended)
+            <div class="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 flex items-start gap-2">
+                <span class="text-xs font-bold text-amber-400 uppercase">{{ __('clients.deload.recommended_title') }}:</span>
+                <span class="text-sm text-amber-200">{{ __('clients.deload.recommended_text') }}</span>
+            </div>
+        @endif
+
         <x-ui.card>
             <h2 class="text-sm font-bold text-white mb-4 flex items-center gap-1.5">
                 {{ __('clients.chart.acwr_title') }}

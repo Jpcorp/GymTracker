@@ -30,10 +30,14 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-800">
+                    @php
+                        $phaseColors = ['accumulation' => 'cyan', 'intensification' => 'amber', 'realization' => 'emerald', 'deload' => 'violet'];
+                    @endphp
                     @forelse ($routines as $routine)
                         <tr wire:key="routine-{{ $routine->id }}">
                             <td class="px-4 py-3 text-slate-200">
                                 <a href="{{ route('clients.routines.show', [$client, $routine]) }}" wire:navigate class="font-semibold text-cyan-400 hover:text-cyan-300">{{ $routine->name }}</a>
+                                <x-ui.badge :color="$phaseColors[$routine->phase] ?? 'slate'">{{ __('routines.phases.'.$routine->phase) }}</x-ui.badge>
                             </td>
                             <td class="px-4 py-3 text-slate-400">{{ $routine->weekly_frequency }}x/{{ __('routines.week') }}</td>
                             <td class="px-4 py-3 text-slate-400">{{ $routine->start_date->format('Y-m-d') }} &rarr; {{ $routine->end_date?->format('Y-m-d') ?? __('routines.ongoing') }}</td>

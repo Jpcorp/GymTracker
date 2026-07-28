@@ -467,6 +467,7 @@ class ClientShow extends Component
             'acwrChartData' => $this->acwrChartData(),
             'symmetryChartData' => $this->symmetryChartData(),
             'goalProgress' => $this->client->goalProgress(),
+            'deloadRecommended' => $this->client->deloadRecommended(),
         ]);
     }
 
