@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
     'name', 'email', 'phone', 'birth_date', 'gender', 'start_date',
     'goal', 'profile_photo', 'status', 'trainer_id',
     'goal_metric', 'goal_target_value', 'goal_target_date',
+    'nutrition_target_kcal', 'nutrition_target_protein_g', 'nutrition_target_notes',
 ])]
 class Client extends Model
 {
@@ -93,6 +94,11 @@ class Client extends Model
     public function satisfactionSurveys(): HasMany
     {
         return $this->hasMany(SatisfactionSurvey::class);
+    }
+
+    public function mobilityAssessments(): HasMany
+    {
+        return $this->hasMany(MobilityAssessment::class);
     }
 
     public function bodyPhotos(): HasMany
@@ -297,5 +303,31 @@ class Client extends Model
             : $this->routines()->orderBy('start_date')->first()->start_date;
 
         return $anchor->diffInWeeks(now()) >= self::DELOAD_INTERVAL_WEEKS;
+    }
+
+    private const RETURN_RAMP_GAP_DAYS = 7;
+
+    /**
+     * True when the client's two most recent attendances are separated by RETURN_RAMP_GAP_DAYS or
+     * more, AND the most recent one is within the last 3 days — i.e. they just came back from a
+     * silence long enough to have detrained, so load should ramp back up gradually rather than
+     * resuming at the same volume (avoids an ACWR spike right after a comeback).
+     */
+    public function returnRampRecommended(): bool
+    {
+        $lastTwo = $this->attendances()
+            ->orderByDesc('attendance_date')
+            ->distinct()
+            ->limit(2)
+            ->pluck('attendance_date');
+
+        if ($lastTwo->count() < 2) {
+            return false;
+        }
+
+        [$mostRecent, $secondMostRecent] = $lastTwo;
+
+        return abs($mostRecent->diffInDays($secondMostRecent)) >= self::RETURN_RAMP_GAP_DAYS
+            && abs(now()->diffInDays($mostRecent)) <= 3;
     }
 }

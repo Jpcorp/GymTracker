@@ -81,7 +81,13 @@
             <x-ui.card wire:key="exercise-{{ $exercise->id }}" class="space-y-4">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <h3 class="text-sm font-bold text-white">{{ $exercise->name }}</h3>
+                        <h3 class="text-sm font-bold text-white flex items-center gap-1.5 flex-wrap">
+                            {{ $exercise->name }}
+                            @if (in_array($exercise->id, $staleExerciseIds))
+                                <x-ui.badge color="amber">{{ __('routines.performance.stale_test_badge') }}</x-ui.badge>
+                                <x-ui.chart-help text="{{ __('routines.performance.stale_test_help') }}" />
+                            @endif
+                        </h3>
                         <p class="text-xs text-slate-400 mt-0.5">
                             {{ $exercise->muscle_group ?: '—' }} &middot; {{ $exercise->sets }} {{ __('routines.exercise.sets_unit') }} &middot; {{ $exercise->reps_range }} {{ __('routines.exercise.reps_unit') }}
                             @if ($exercise->rest_seconds) &middot; {{ $exercise->rest_seconds }}s {{ __('routines.exercise.rest_unit') }} @endif
@@ -157,9 +163,18 @@
                 @endif
 
                 <div class="border-t border-slate-800 pt-4">
-                    <h4 class="text-xs font-bold text-white mb-3 flex items-center gap-1.5">
+                    <h4 class="text-xs font-bold text-white mb-3 flex items-center gap-1.5 flex-wrap">
                         {{ __('routines.performance.e1rm_title') }}
                         <x-ui.chart-help text="Fuerza máxima estimada (fórmula de Epley) a partir del peso y las repeticiones logradas en cada sesión. Una curva ascendente indica ganancia real de fuerza, no solo más peso levantado con más repeticiones." />
+                        @php $strengthLevel = $strengthLevels[$exercise->id] ?? null; @endphp
+                        @if ($strengthLevel)
+                            @php
+                                $levelColors = ['novice' => 'slate', 'intermediate' => 'cyan', 'advanced' => 'amber', 'elite' => 'emerald'];
+                            @endphp
+                            <x-ui.badge :color="$levelColors[$strengthLevel['level']] ?? 'slate'">
+                                {{ __('routines.performance.strength_level_badge', ['level' => __('routines.performance.strength_levels.'.$strengthLevel['level']), 'ratio' => $strengthLevel['ratio']]) }}
+                            </x-ui.badge>
+                        @endif
                     </h4>
                     @if ($e1rmCharts[$exercise->id]['hasEnoughData'])
                         <div id="e1rm-chart-{{ $exercise->id }}" data-progress-chart="{{ json_encode($e1rmCharts[$exercise->id]) }}" wire:ignore></div>

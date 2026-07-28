@@ -44,4 +44,15 @@ return [
         'comments' => 'Comentarios',
         'none_recorded' => 'Aún no hay encuestas registradas.',
     ],
+
+    'mobility' => [
+        'title' => 'Movilidad y Flexibilidad',
+        'save' => 'Registrar Evaluación',
+        'date' => 'Fecha',
+        'test_name' => 'Prueba',
+        'test_name_placeholder' => 'Ej. Sit and reach',
+        'score' => 'Puntaje',
+        'notes' => 'Notas',
+        'none_recorded' => 'Aún no hay evaluaciones de movilidad registradas.',
+    ],
 ];

@@ -7,6 +7,7 @@ use App\Models\Injury;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\Encoders\JpegEncoder;
 use Intervention\Image\ImageManager;
@@ -121,6 +122,14 @@ class ClientShow extends Component
 
     public ?string $injury_notes = null;
 
+    public string $mobility_assessment_date = '';
+
+    public string $mobility_test_name = '';
+
+    public ?string $mobility_score = null;
+
+    public ?string $mobility_notes = null;
+
     public function mount(Client $client): void
     {
         $this->authorize('view', $client);
@@ -137,6 +146,7 @@ class ClientShow extends Component
         $this->nutrition_log_date = now()->format('Y-m-d');
         $this->satisfaction_survey_date = now()->format('Y-m-d');
         $this->injury_reported_date = now()->format('Y-m-d');
+        $this->mobility_assessment_date = now()->format('Y-m-d');
     }
 
     protected function rules(): array
@@ -478,6 +488,33 @@ class ClientShow extends Component
         $this->injury_reported_date = now()->format('Y-m-d');
     }
 
+    protected function mobilityRules(): array
+    {
+        return [
+            'mobility_assessment_date' => ['required', 'date'],
+            'mobility_test_name' => ['required', 'string', 'max:100'],
+            'mobility_score' => ['required', 'numeric'],
+            'mobility_notes' => ['nullable', 'string'],
+        ];
+    }
+
+    public function saveMobilityAssessment(): void
+    {
+        $this->authorize('update', $this->client);
+
+        $data = $this->validate($this->mobilityRules());
+
+        $this->client->mobilityAssessments()->create([
+            'assessment_date' => $data['mobility_assessment_date'],
+            'test_name' => $data['mobility_test_name'],
+            'score' => $data['mobility_score'],
+            'notes' => $data['mobility_notes'],
+        ]);
+
+        $this->reset(['mobility_test_name', 'mobility_score', 'mobility_notes']);
+        $this->mobility_assessment_date = now()->format('Y-m-d');
+    }
+
     public function resolveInjury(Injury $injury): void
     {
         $this->authorize('update', $this->client);
@@ -492,6 +529,23 @@ class ClientShow extends Component
     public function monthlyAttendancePercentage(): int
     {
         return $this->client->monthlyAttendancePercentage();
+    }
+
+    public bool $showPortalLink = false;
+
+    public function togglePortalLink(): void
+    {
+        $this->showPortalLink = ! $this->showPortalLink;
+    }
+
+    /**
+     * Signed, expiring link to the client's own read-only progress view (no client login system —
+     * the trainer shares this URL directly). Valid 30 days; regenerating just requires clicking
+     * the share button again later, no revocation mechanism needed at this scale.
+     */
+    public function portalUrl(): string
+    {
+        return URL::temporarySignedRoute('client.portal', now()->addDays(30), ['client' => $this->client->id]);
     }
 
     public function render()
@@ -513,12 +567,14 @@ class ClientShow extends Component
             'moodRecords' => $this->client->moodRecords()->orderByDesc('week_start')->get(),
             'nutritionLogs' => $this->client->nutritionLogs()->orderByDesc('log_date')->get(),
             'satisfactionSurveys' => $this->client->satisfactionSurveys()->orderByDesc('survey_date')->get(),
+            'mobilityAssessments' => $this->client->mobilityAssessments()->orderByDesc('assessment_date')->get(),
             'moodChartData' => $this->moodChartData(),
             'nutritionChartData' => $this->nutritionChartData(),
             'acwrChartData' => $this->acwrChartData(),
             'symmetryChartData' => $this->symmetryChartData(),
             'goalProgress' => $this->client->goalProgress(),
             'deloadRecommended' => $this->client->deloadRecommended(),
+            'returnRampRecommended' => $this->client->returnRampRecommended(),
             'injuries' => $this->client->injuries()->orderByDesc('reported_date')->get(),
             'activeInjuriesCount' => $this->client->activeInjuriesCount(),
         ]);

@@ -35,10 +35,21 @@ return [
     'goal_progress' => 'Meta (:metric): :current → :target · :percent%',
     'goal_days_remaining' => ':days días restantes',
     'goal_overdue' => 'Meta vencida hace :days días',
+    'nutrition_target_title' => 'Meta Nutricional (opcional)',
+    'nutrition_target_kcal' => 'Kcal objetivo',
+    'nutrition_target_protein' => 'Proteína objetivo (g)',
+    'nutrition_target_notes' => 'Notas de fase',
+    'nutrition_target_kcal_display' => ':kcal kcal',
+    'nutrition_target_protein_display' => ':protein g proteína',
+    'nutrition_target_display' => 'Meta: :parts',
     'download_pdf' => 'Descargar PDF',
     'export_excel' => 'Exportar Excel',
     'routines' => 'Rutinas',
     'back_to_list' => 'Volver a la lista',
+    'share_portal' => 'Compartir con Cliente',
+    'share_portal_hint' => 'Link de solo lectura (30 días):',
+    'copy_link' => 'Copiar',
+    'link_copied' => '¡Copiado!',
     'age' => 'Edad',
     'trainer' => 'Entrenador',
     'years' => 'años',
@@ -99,6 +110,11 @@ return [
     'deload' => [
         'recommended_title' => 'Recomendación de descarga',
         'recommended_text' => 'Este cliente lleva varias semanas sin una semana de descarga programada. Considera agregar una rutina en fase de descarga.',
+    ],
+
+    'return_ramp' => [
+        'recommended_title' => 'Retorno gradual recomendado',
+        'recommended_text' => 'Este cliente acaba de volver tras una ausencia prolongada. Considera reducir el volumen/intensidad la primera semana para retomar gradualmente.',
     ],
 
     'injuries' => [

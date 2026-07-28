@@ -90,5 +90,14 @@ return [
         'rpe_series' => 'RPE promedio',
         'no_muscle_group' => 'Sin grupo',
         'week_label' => 'Sem. :date',
+        'stale_test_badge' => 'Hace tiempo sin test de fuerza',
+        'stale_test_help' => 'No se ha registrado una serie de este ejercicio en más de 4 semanas. Se recomienda un nuevo test para actualizar el 1RM estimado.',
+        'strength_level_badge' => 'Nivel: :level (:ratiox tu peso corporal)',
+        'strength_levels' => [
+            'novice' => 'Principiante',
+            'intermediate' => 'Intermedio',
+            'advanced' => 'Avanzado',
+            'elite' => 'Elite',
+        ],
     ],
 ];

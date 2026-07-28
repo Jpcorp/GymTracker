@@ -32,6 +32,12 @@ class ClientForm extends Component
 
     public ?string $goal_target_date = null;
 
+    public ?string $nutrition_target_kcal = null;
+
+    public ?string $nutrition_target_protein_g = null;
+
+    public ?string $nutrition_target_notes = null;
+
     public function mount(?Client $client = null): void
     {
         if ($client && $client->exists) {
@@ -48,6 +54,9 @@ class ClientForm extends Component
             $this->goal_metric = $client->goal_metric;
             $this->goal_target_value = $client->goal_target_value;
             $this->goal_target_date = $client->goal_target_date?->format('Y-m-d');
+            $this->nutrition_target_kcal = $client->nutrition_target_kcal;
+            $this->nutrition_target_protein_g = $client->nutrition_target_protein_g;
+            $this->nutrition_target_notes = $client->nutrition_target_notes;
         }
     }
 
@@ -64,6 +73,9 @@ class ClientForm extends Component
             'goal_metric' => ['nullable', 'in:weight_kg,body_fat_percentage'],
             'goal_target_value' => ['nullable', 'numeric'],
             'goal_target_date' => ['nullable', 'date'],
+            'nutrition_target_kcal' => ['nullable', 'integer', 'min:0'],
+            'nutrition_target_protein_g' => ['nullable', 'integer', 'min:0'],
+            'nutrition_target_notes' => ['nullable', 'string', 'max:255'],
         ];
     }
 

@@ -11,6 +11,8 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class RoutineShow extends Component
 {
+    private const STRENGTH_RETEST_WEEKS = 4;
+
     public Client $client;
 
     public Routine $routine;
@@ -180,12 +182,101 @@ class RoutineShow extends Component
             ->with(['workoutLogs' => fn ($query) => $query->orderByDesc('workout_date')->orderByDesc('id')])
             ->get();
 
+        $strengthLevels = $exercises->mapWithKeys(function ($exercise) {
+            $e1rm = $this->latestE1rm($exercise);
+            $ratioData = $e1rm !== null ? $this->strengthRatio($exercise, $e1rm) : null;
+
+            if ($ratioData === null) {
+                return [$exercise->id => null];
+            }
+
+            return [$exercise->id => [
+                'level' => $this->classifyRatio($ratioData['lift'], $ratioData['ratio']),
+                'ratio' => round($ratioData['ratio'], 2),
+            ]];
+        });
+
         return view('livewire.routine.routine-show', [
             'exercises' => $exercises,
             'e1rmCharts' => $exercises->mapWithKeys(fn ($exercise) => [$exercise->id => $this->e1rmChartData($exercise)]),
             'volumeChartData' => $this->volumeByMuscleGroupChartData(),
             'rpeChartData' => $this->rpeChartData(),
+            'staleExerciseIds' => $this->staleExercises($exercises),
+            'strengthLevels' => $strengthLevels,
         ]);
+    }
+
+    /**
+     * Exercise IDs whose most recent WorkoutLog is STRENGTH_RETEST_WEEKS or older
+     * (or that have no logged workout at all), meaning a fresh strength test is due.
+     */
+    public function staleExercises($exercises): array
+    {
+        return collect($exercises)
+            ->filter(function ($exercise) {
+                $latest = $exercise->workoutLogs->first();
+
+                return $latest && $latest->workout_date->diffInDays(now()) >= self::STRENGTH_RETEST_WEEKS * 7;
+            })
+            ->pluck('id')
+            ->all();
+    }
+
+    /**
+     * Classifies an exercise's estimated 1RM as a multiple of the client's current
+     * bodyweight against novice/intermediate/advanced/elite strength norms. Only
+     * squat/bench/deadlift-style compounds have a meaningful bodyweight-ratio norm;
+     * returns null for anything else, or when bodyweight isn't on record.
+     */
+    public function strengthLevel(Exercise $exercise, float $e1rm): ?string
+    {
+        $data = $this->strengthRatio($exercise, $e1rm);
+
+        return $data ? $this->classifyRatio($data['lift'], $data['ratio']) : null;
+    }
+
+    private function strengthRatio(Exercise $exercise, float $e1rm): ?array
+    {
+        $lift = $this->matchLiftCategory($exercise->name);
+        if ($lift === null) {
+            return null;
+        }
+
+        $bodyweight = $this->client->physicalMetrics()->orderByDesc('recorded_at')->first()?->weight_kg;
+        if (! $bodyweight) {
+            return null;
+        }
+
+        return ['lift' => $lift, 'ratio' => $e1rm / $bodyweight];
+    }
+
+    private function matchLiftCategory(string $name): ?string
+    {
+        $name = mb_strtolower($name);
+
+        return match (true) {
+            str_contains($name, 'sentadilla') || str_contains($name, 'squat') => 'squat',
+            str_contains($name, 'banca') || str_contains($name, 'bench') => 'bench',
+            str_contains($name, 'peso muerto') || str_contains($name, 'deadlift') => 'deadlift',
+            default => null,
+        };
+    }
+
+    private function classifyRatio(string $lift, float $ratio): string
+    {
+        // [novice/intermediate boundary, intermediate/advanced, advanced/elite]
+        $thresholds = [
+            'squat' => [1.0, 1.5, 2.0],
+            'bench' => [0.75, 1.0, 1.5],
+            'deadlift' => [1.25, 1.75, 2.25],
+        ][$lift];
+
+        return match (true) {
+            $ratio < $thresholds[0] => 'novice',
+            $ratio < $thresholds[1] => 'intermediate',
+            $ratio < $thresholds[2] => 'advanced',
+            default => 'elite',
+        };
     }
 
     /**
@@ -195,19 +286,36 @@ class RoutineShow extends Component
      */
     public function e1rmChartData(Exercise $exercise): array
     {
-        $points = $exercise->workoutLogs
-            ->filter(fn ($log) => $log->weight_kg !== null && (int) $log->completed_reps > 0)
-            ->sortBy('workout_date')
-            ->values();
+        $series = $this->e1rmSeries($exercise);
 
         return [
-            'labels' => $points->map(fn ($log) => $log->workout_date->format('Y-m-d'))->all(),
+            'labels' => $series->pluck('date')->all(),
             'series' => [[
                 'name' => __('routines.performance.e1rm_series'),
-                'data' => $points->map(fn ($log) => round((float) $log->weight_kg * (1 + ((int) $log->completed_reps) / 30), 2))->all(),
+                'data' => $series->pluck('value')->all(),
             ]],
-            'hasEnoughData' => $points->count() >= 2,
+            'hasEnoughData' => $series->count() >= 2,
         ];
+    }
+
+    /**
+     * Most recent estimated 1RM for an exercise, or null if it has no eligible logs.
+     */
+    public function latestE1rm(Exercise $exercise): ?float
+    {
+        return $this->e1rmSeries($exercise)->last()['value'] ?? null;
+    }
+
+    private function e1rmSeries(Exercise $exercise): \Illuminate\Support\Collection
+    {
+        return $exercise->workoutLogs
+            ->filter(fn ($log) => $log->weight_kg !== null && (int) $log->completed_reps > 0)
+            ->sortBy('workout_date')
+            ->values()
+            ->map(fn ($log) => [
+                'date' => $log->workout_date->format('Y-m-d'),
+                'value' => round((float) $log->weight_kg * (1 + ((int) $log->completed_reps) / 30), 2),
+            ]);
     }
 
     /**

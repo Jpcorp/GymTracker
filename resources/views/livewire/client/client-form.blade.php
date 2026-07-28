@@ -45,6 +45,18 @@
                 </div>
             </div>
 
+            <div class="space-y-4 pt-2 border-t border-slate-800">
+                <h2 class="text-xs font-bold text-slate-300 pt-4">{{ __('clients.nutrition_target_title') }}</h2>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <x-ui.input label="{{ __('clients.nutrition_target_kcal') }}" name="nutrition_target_kcal" wire:model="nutrition_target_kcal" type="number" min="0" />
+
+                    <x-ui.input label="{{ __('clients.nutrition_target_protein') }}" name="nutrition_target_protein_g" wire:model="nutrition_target_protein_g" type="number" min="0" />
+
+                    <x-ui.input label="{{ __('clients.nutrition_target_notes') }}" name="nutrition_target_notes" wire:model="nutrition_target_notes" type="text" />
+                </div>
+            </div>
+
             <div class="flex items-center justify-end gap-3 pt-2">
                 <a href="{{ route('clients.index') }}" wire:navigate class="text-xs font-semibold text-slate-400 hover:text-slate-200">
                     {{ __('clients.cancel') }}

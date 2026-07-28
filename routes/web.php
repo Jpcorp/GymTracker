@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ClientExportController;
+use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\ClientReportController;
 use App\Livewire\Client\ClientForm;
 use App\Livewire\Client\ClientList;
@@ -12,6 +13,12 @@ use App\Livewire\Routine\RoutineShow;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
+
+// Read-only client self-service view, reachable only via a signed URL the trainer shares —
+// no client login system. `signed` middleware rejects any tampered or expired link.
+Route::get('/portal/{client}', ClientPortalController::class)
+    ->middleware('signed')
+    ->name('client.portal');
 
 Route::get('dashboard', Dashboard::class)
     ->middleware(['auth', 'verified'])

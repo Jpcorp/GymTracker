@@ -79,11 +79,30 @@
                     {{ __('clients.edit') }}
                 </x-ui.button>
 
+                <x-ui.button type="button" wire:click="togglePortalLink" variant="secondary">
+                    <x-ui.icon name="users" class="w-3.5 h-3.5 text-cyan-400" />
+                    {{ __('clients.share_portal') }}
+                </x-ui.button>
+
                 <x-ui.button href="{{ route('clients.index') }}" wire:navigate variant="secondary">
                     {{ __('clients.back_to_list') }}
                 </x-ui.button>
             </div>
         </div>
+
+        @if ($showPortalLink)
+            <div x-data="{ copied: false }" class="flex items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-xl px-3 py-2">
+                <p class="text-[11px] text-slate-400 shrink-0">{{ __('clients.share_portal_hint') }}</p>
+                <input type="text" readonly value="{{ $this->portalUrl() }}" x-ref="portalUrl"
+                       class="flex-1 bg-transparent text-[11px] text-slate-300 border-0 focus:ring-0 truncate" onclick="this.select()" />
+                <button type="button"
+                        @click="navigator.clipboard.writeText($refs.portalUrl.value); copied = true; setTimeout(() => copied = false, 2000)"
+                        class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 shrink-0">
+                    <span x-show="!copied">{{ __('clients.copy_link') }}</span>
+                    <span x-show="copied" x-cloak>{{ __('clients.link_copied') }}</span>
+                </button>
+            </div>
+        @endif
 
         {{-- Tabs --}}
         <div class="flex items-center gap-1 overflow-x-auto pb-1 border-b border-slate-800 scrollbar-none">
@@ -489,6 +508,13 @@
             </div>
         @endif
 
+        @if ($returnRampRecommended)
+            <div class="rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-4 py-3 flex items-start gap-2">
+                <span class="text-xs font-bold text-cyan-400 uppercase">{{ __('clients.return_ramp.recommended_title') }}:</span>
+                <span class="text-sm text-cyan-200">{{ __('clients.return_ramp.recommended_text') }}</span>
+            </div>
+        @endif
+
         <x-ui.card>
             <h2 class="text-sm font-bold text-white mb-4 flex items-center gap-1.5">
                 {{ __('clients.chart.acwr_title') }}
@@ -576,6 +602,19 @@
 
         <x-ui.card>
             <h2 class="text-sm font-bold text-white mb-4">{{ __('wellness.nutrition.title') }}</h2>
+
+            @if ($client->nutrition_target_kcal || $client->nutrition_target_protein_g || $client->nutrition_target_notes)
+                @php
+                    $nutritionTargetParts = array_filter([
+                        $client->nutrition_target_kcal ? __('clients.nutrition_target_kcal_display', ['kcal' => $client->nutrition_target_kcal]) : null,
+                        $client->nutrition_target_protein_g ? __('clients.nutrition_target_protein_display', ['protein' => $client->nutrition_target_protein_g]) : null,
+                        $client->nutrition_target_notes,
+                    ]);
+                @endphp
+                <p class="text-xs text-slate-400 mb-4">
+                    {{ __('clients.nutrition_target_display', ['parts' => implode(' · ', $nutritionTargetParts)]) }}
+                </p>
+            @endif
 
             <form wire:submit="saveNutritionLog" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <x-ui.input label="{{ __('wellness.nutrition.date') }}" name="nutrition_log_date" wire:model="nutrition_log_date" type="date" />
@@ -679,6 +718,50 @@
                         @empty
                             <tr>
                                 <td colspan="5" class="px-4 py-6 text-center text-slate-400">{{ __('wellness.satisfaction.none_recorded') }}</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </x-ui.card>
+
+        <x-ui.card>
+            <h2 class="text-sm font-bold text-white mb-4">{{ __('wellness.mobility.title') }}</h2>
+
+            <form wire:submit="saveMobilityAssessment" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <x-ui.input label="{{ __('wellness.mobility.date') }}" name="mobility_assessment_date" wire:model="mobility_assessment_date" type="date" />
+                <x-ui.input label="{{ __('wellness.mobility.test_name') }}" name="mobility_test_name" wire:model="mobility_test_name" type="text" placeholder="{{ __('wellness.mobility.test_name_placeholder') }}" />
+                <x-ui.input label="{{ __('wellness.mobility.score') }}" name="mobility_score" wire:model="mobility_score" type="number" step="0.1" />
+                <x-ui.textarea label="{{ __('wellness.mobility.notes') }}" name="mobility_notes" wire:model="mobility_notes" class="sm:col-span-4" rows="2" />
+
+                <div class="sm:col-span-4 flex justify-end">
+                    <x-ui.button type="submit" variant="primary">{{ __('wellness.mobility.save') }}</x-ui.button>
+                </div>
+            </form>
+        </x-ui.card>
+
+        <x-ui.card padding="p-0">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-800 text-sm">
+                    <thead class="bg-slate-800/50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('wellness.mobility.date') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('wellness.mobility.test_name') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('wellness.mobility.score') }}</th>
+                            <th class="px-4 py-3 text-left text-[10px] font-bold text-slate-400 uppercase">{{ __('wellness.mobility.notes') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800">
+                        @forelse ($mobilityAssessments as $assessment)
+                            <tr wire:key="mobility-{{ $assessment->id }}">
+                                <td class="px-4 py-3 text-slate-200">{{ $assessment->assessment_date->format('Y-m-d') }}</td>
+                                <td class="px-4 py-3 text-slate-200">{{ $assessment->test_name }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ $assessment->score }}</td>
+                                <td class="px-4 py-3 text-slate-400">{{ $assessment->notes ?? '—' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="px-4 py-6 text-center text-slate-400">{{ __('wellness.mobility.none_recorded') }}</td>
                             </tr>
                         @endforelse
                     </tbody>
